@@ -5,14 +5,14 @@ function slugify (x) {
 }
 
 function htmlencode (x) {
-/*
-  // safest, delegate task to native -- IMPORTANT: enabling this breaks both jest and runkit, but with browserify it's fine
-  if (document && document.createElement) {
-    const el = document.createElement("div")
-    el.innerText = x
-    return el.innerHTML
-  }
-*/
+  /*
+    // safest, delegate task to native -- IMPORTANT: enabling this breaks both jest and runkit, but with browserify it's fine
+    if (document && document.createElement) {
+      const el = document.createElement("div")
+      el.innerText = x
+      return el.innerHTML
+    }
+  */
 
   return String(x)
     .replace(/&/g, '&amp;')
@@ -35,6 +35,7 @@ function tocPlugin (md, options) {
     level: 1,
     listType: 'ol',
     format: undefined,
+    exclude: [],
     callback: undefined/* function(html, ast) {} */
   }, options)
 
@@ -127,18 +128,22 @@ function tocPlugin (md, options) {
       if (tree.c.length === 0) return ''
 
       let buffer = ''
-      if (tree.l === 0 || isLevelSelected(tree.l)) {
-        buffer += (`<${htmlencode(_options.listType) + listClass}>`)
-      }
-      tree.c.forEach(node => {
-        if (isLevelSelected(node.l)) {
-          buffer += (`<li${itemClass}><a${linkClass} href="#${unique(options.slugify(node.n))}">${typeof _options.format === 'function' ? _options.format(node.n, htmlencode) : htmlencode(node.n)}</a>${ast2html(node)}</li>`)
-        } else {
-          buffer += ast2html(node)
+      if (!tree.e) {
+        if (tree.l === 0 || isLevelSelected(tree.l)) {
+          buffer += (`<${htmlencode(_options.listType) + listClass}>`)
         }
-      })
-      if (tree.l === 0 || isLevelSelected(tree.l)) {
-        buffer += (`</${htmlencode(_options.listType)}>`)
+        tree.c.forEach(node => {
+          if (!node.e) {
+            if (isLevelSelected(node.l)) {
+              buffer += (`<li${itemClass}><a${linkClass} href="#${unique(options.slugify(node.n))}">${typeof _options.format === 'function' ? _options.format(node.n, htmlencode) : htmlencode(node.n)}</a>${ast2html(node)}</li>`)
+            } else {
+              buffer += ast2html(node)
+            }
+          }
+        })
+        if (tree.l === 0 || isLevelSelected(tree.l)) {
+          buffer += (`</${htmlencode(_options.listType)}>`)
+        }
       }
       return buffer
     }
@@ -146,8 +151,15 @@ function tocPlugin (md, options) {
     return ast2html(ast)
   }
 
+  const isExcludedFunc = exclude => label => exclude(label)
+  const isExcludedArray = exclude => label => exclude.includes(label)
+
+  const isExcluded = Array.isArray(options.exclude)
+    ? isExcludedArray(options.exclude)
+    : isExcludedFunc(options.exclude)
+
   function headings2ast (tokens) {
-    const ast = { l: 0, n: '', c: [] }
+    const ast = { l: 0, n: '', c: [], e: false }
     const stack = [ast]
 
     for (let i = 0, iK = tokens.length; i < iK; i++) {
@@ -163,7 +175,8 @@ function tocPlugin (md, options) {
         const node = {
           l: parseInt(token.tag.substr(1), 10),
           n: key,
-          c: []
+          c: [],
+          e: isExcluded(key)
         }
 
         if (node.l > stack[0].l) {

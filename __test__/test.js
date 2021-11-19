@@ -228,3 +228,25 @@ test('all other options should work as expected', () => {
   const htmlContent = '<nav class="user-content-toc"><ul class="my-list"><li class="my-item"><a class="my-link" href="#日本語"><span> 日本語</span></a></li><li class="my-item"><a class="my-link" href="#日本語-1"><span> 日本語</span></a></li></ul></nav><h1 id="日本語"><a class="header-anchor" href="#日本語">§</a> 日本語</h1>\n<h1 id="日本語-1"><a class="header-anchor" href="#日本語-1">§</a> 日本語</h1>\n<pre><code># should be considered as code</code></pre>\n'
   expect(md.render(mdContent)).toBe(htmlContent)
 })
+
+test('exclude(Array Type) option should work as expected', () => {
+  const md = getMarkdownIt()
+    .use(markdownItTocDoneRight, { exclude: ['header 1'] })
+  const mdContent = '${toc}\n\n# header 1\n\n## subheader\n\n# header 2'
+  const htmlContent = `<nav class="table-of-contents"><ol><li><a href="#header-2">header 2</a></li></ol></nav><h1>header 1</h1>
+<h2>subheader</h2>
+<h1>header 2</h1>
+`
+  expect(md.render(mdContent)).toBe(htmlContent)
+})
+
+test('exclude(Function Type) option should work as expected', () => {
+  const md = getMarkdownIt()
+    .use(markdownItTocDoneRight, { exclude: (heading) => heading === 'header 1' })
+  const mdContent = '${toc}\n\n# header 1\n\n## subheader\n\n# header 2'
+  const htmlContent = `<nav class="table-of-contents"><ol><li><a href="#header-2">header 2</a></li></ol></nav><h1>header 1</h1>
+<h2>subheader</h2>
+<h1>header 2</h1>
+`
+  expect(md.render(mdContent)).toBe(htmlContent)
+})
