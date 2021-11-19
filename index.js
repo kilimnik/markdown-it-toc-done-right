@@ -176,7 +176,7 @@ function tocPlugin (md, options) {
           l: parseInt(token.tag.substr(1), 10),
           n: key,
           c: [],
-          e: isExcluded(key)
+          e: isExcluded(key.trim())
         }
 
         if (node.l > stack[0].l) {

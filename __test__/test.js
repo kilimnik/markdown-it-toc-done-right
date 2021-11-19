@@ -250,3 +250,21 @@ test('exclude(Function Type) option should work as expected', () => {
 `
   expect(md.render(mdContent)).toBe(htmlContent)
 })
+
+test('exclude(Array Type) option should work as expected', () => {
+  const md = getMarkdownIt()
+    .use(markdownItAnchor, {
+      permalink: true,
+      permalinkBefore: true,
+      permalinkSymbol: '§',
+      slugify: uslugify
+    })
+    .use(markdownItTocDoneRight, { exclude: ['header 1'] })
+  const mdContent = '${toc}\n\n# header 1\n\n## subheader\n\n# header 2'
+  const htmlContent = `<nav class="table-of-contents"><ol><li><a href="#header-2"> header 2</a></li></ol></nav><h1 id="header-1"><a class="header-anchor" href="#header-1">§</a> header 1</h1>
+<h2 id="subheader"><a class="header-anchor" href="#subheader">§</a> subheader</h2>
+<h1 id="header-2"><a class="header-anchor" href="#header-2">§</a> header 2</h1>
+`
+
+  expect(md.render(mdContent)).toBe(htmlContent)
+})
